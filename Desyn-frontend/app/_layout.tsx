@@ -1,58 +1,128 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-import * as SplashScreen from 'expo-splash-screen';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
+// import { Stack, useRouter, useSegments } from "expo-router";
+// import { useEffect, useState, useMemo } from "react";
+// import { View, ActivityIndicator } from "react-native";
+// import {
+//   QueryClient,
+//   QueryClientProvider,
+// } from "@tanstack/react-query";
 
-import { AuthProvider, useAuth } from '@/lib/auth/AuthContext';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+// export default function RootLayout() {
+//   const router = useRouter();
+//   const segments = useSegments();
 
-SplashScreen.preventAutoHideAsync();
+//   const [isReady, setIsReady] = useState(false);
+//   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+//   // ✅ IMPORTANT: create QueryClient ONCE
+//   const queryClient = useMemo(() => {
+//     return new QueryClient({
+//       defaultOptions: {
+//         queries: {
+//           retry: 1,
+//           staleTime: 1000 * 60,
+//         },
+//       },
+//     });
+//   }, []);
+
+//   // fake auth init
+//   useEffect(() => {
+//     const init = async () => {
+//       const fakeAuthCheck = true;
+//       setIsLoggedIn(fakeAuthCheck);
+//       setIsReady(true);
+//     };
+
+//     init();
+//   }, []);
+
+//   // navigation guard
+//   useEffect(() => {
+//     if (!isReady) return;
+
+//     const inAuthGroup = segments[0] === "(auth)";
+
+//     if (!isLoggedIn && !inAuthGroup) {
+//       router.replace("/(auth)/login");
+//     }
+
+//     if (isLoggedIn && inAuthGroup) {
+//       router.replace("/(tabs)");
+//     }
+//   }, [isReady, isLoggedIn, segments]);
+
+//   if (!isReady) {
+//     return (
+//       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+//         <ActivityIndicator size="large" />
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <QueryClientProvider client={queryClient}>
+//       <Stack screenOptions={{ headerShown: false }} />
+//     </QueryClientProvider>
+//   );
+// }
+
+
+import { Stack, useRouter, useSegments } from "expo-router";
+import { useEffect, useState, useMemo } from "react";
+import { View, ActivityIndicator } from "react-native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import { AuthProvider, useAuth } from "@/lib/auth/AuthContext";
+
+function RootNavigator() {
+  const router = useRouter();
+  const segments = useSegments();
   const { isAuthenticated, isLoading } = useAuth();
 
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === "auth";
+
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace("/auth/login");
+    }
+
+    if (isAuthenticated && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [isAuthenticated, isLoading, segments]);
+
   if (isLoading) {
-    return null;
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        {!isAuthenticated ? (
-          <Stack.Group screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="auth/login" />
-            <Stack.Screen name="auth/register" />
-          </Stack.Group>
-        ) : (
-          <Stack.Group screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="profile/[id]" options={{ presentation: 'card', title: 'Profile' }} />
-            <Stack.Screen name="post/[id]" options={{ presentation: 'card', title: 'Post' }} />
-            <Stack.Screen name="community/[id]" options={{ presentation: 'card', title: 'Community' }} />
-            <Stack.Screen name="event/[id]" options={{ presentation: 'card', title: 'Event' }} />
-            <Stack.Screen name="create-post" options={{ presentation: 'modal', title: 'Create Post' }} />
-          </Stack.Group>
-        )}
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
 export default function RootLayout() {
-  const queryClient = new QueryClient();
+  // ✅ QueryClient must be stable (NOT recreated every render)
+  const queryClient = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: 1,
+            staleTime: 1000 * 60,
+          },
+        },
+      }),
+    []
+  );
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RootLayoutNav />
+        <RootNavigator />
       </AuthProvider>
     </QueryClientProvider>
   );

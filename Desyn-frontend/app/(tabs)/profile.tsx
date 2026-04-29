@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  SafeAreaView,
   FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { usersApi, UserWithProfile } from '@/lib/api/users';
 import { postsApi, Post } from '@/lib/api/posts';

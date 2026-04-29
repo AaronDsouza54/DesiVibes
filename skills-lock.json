@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "react-native": {
+      "source": "vercel-labs/json-render",
+      "sourceType": "github",
+      "skillPath": "skills/react-native/SKILL.md",
+      "computedHash": "bce560b25029037d424b5ec55bb9b3ec2b399ef98fd12c572327292744de84fe"
+    },
+    "react-native-architecture": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/frontend-mobile-development/skills/react-native-architecture/SKILL.md",
+      "computedHash": "f9a0f18d522b307981b6f188b8501c9c9326adeb8aca5b46b679731dc69681ae"
+    },
+    "react-native-best-practices": {
+      "source": "callstackincubator/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-native-best-practices/SKILL.md",
+      "computedHash": "bad5e73a1c3ddca2ed4bcd93b05ff913e8f9cc5495feacc3717c69e07fee540f"
+    },
+    "react-native-design": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/ui-design/skills/react-native-design/SKILL.md",
+      "computedHash": "f75e8c7bd9ffd77a29b74eece63806ff87f8723c30744c5cb90f8baab388d18e"
+    }
+  }
+}

@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
-  SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/lib/auth/AuthContext';
 import { Colors } from '@/constants/theme';
@@ -23,6 +23,8 @@ export default function RegisterScreen() {
   const { signUp } = useAuth();
   const colorScheme = useColorScheme();
   const tintColor = Colors[colorScheme ?? 'light'];
+  const isDark = colorScheme === 'dark';
+  const inputTextColor = isDark ? '#fff' : '#000';
 
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -73,7 +75,7 @@ export default function RegisterScreen() {
 
           <View style={styles.form}>
             <TextInput
-              style={[styles.input, { borderColor: tintColor }]}
+              style={[styles.input, { borderColor: tintColor, color: inputTextColor }]}
               placeholder="Email"
               placeholderTextColor={colorScheme === 'dark' ? '#999' : '#ccc'}
               value={email}
@@ -81,35 +83,39 @@ export default function RegisterScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               editable={!loading}
+              selectionColor={tintColor}
             />
 
             <TextInput
-              style={[styles.input, { borderColor: tintColor }]}
+              style={[styles.input, { borderColor: tintColor, color: inputTextColor }]}
               placeholder="Username"
               placeholderTextColor={colorScheme === 'dark' ? '#999' : '#ccc'}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
               editable={!loading}
+              selectionColor={tintColor}
             />
 
             <TextInput
-              style={[styles.input, { borderColor: tintColor }]}
+              style={[styles.input, { borderColor: tintColor, color: inputTextColor }]}
               placeholder="Display Name (optional)"
               placeholderTextColor={colorScheme === 'dark' ? '#999' : '#ccc'}
               value={displayName}
               onChangeText={setDisplayName}
               editable={!loading}
+              selectionColor={tintColor}
             />
 
             <TextInput
-              style={[styles.input, { borderColor: tintColor }]}
+              style={[styles.input, { borderColor: tintColor, color: inputTextColor }]}
               placeholder="Password (min 8 characters)"
               placeholderTextColor={colorScheme === 'dark' ? '#999' : '#ccc'}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
               editable={!loading}
+              selectionColor={tintColor}
             />
 
             <TouchableOpacity

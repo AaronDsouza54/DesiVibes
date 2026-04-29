@@ -1,5 +1,5 @@
 import { decode } from 'base64-arraybuffer';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 import { supabase } from '@/lib/supabase/client';
 
@@ -10,7 +10,7 @@ export async function uploadImageToSupabase(params: {
   contentType: string; // e.g. image/jpeg
 }): Promise<{ publicUrl: string; storagePath: string }> {
   const base64 = await FileSystem.readAsStringAsync(params.localUri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
 
   const arrayBuffer = decode(base64);

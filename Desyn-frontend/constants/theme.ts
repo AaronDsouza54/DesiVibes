@@ -47,6 +47,23 @@ export const Colors = {
   gradientCard: ['#1A1A26', '#12121A'] as [string, string],
 };
 
+// Theme defaults used by `ThemedText` / `ThemedView`.
+// Rule: default text is white, unless background is light → use black.
+export const ThemeColors = {
+  dark: {
+    background: '#000000',
+    text: '#FFFFFF',
+    tint: Colors.indigoLight,
+    border: 'rgba(255,255,255,0.16)',
+  },
+  light: {
+    background: '#FFFFFF',
+    text: '#000000',
+    tint: Colors.indigo,
+    border: 'rgba(0,0,0,0.12)',
+  },
+} as const;
+
 export const Spacing = {
   xs: 4,
   sm: 8,

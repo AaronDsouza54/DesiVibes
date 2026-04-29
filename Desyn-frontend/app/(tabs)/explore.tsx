@@ -8,12 +8,12 @@ import {
   ActivityIndicator,
   Image,
   Alert,
-  SafeAreaView,
   TextInput,
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { ThemedText } from '@/components/themed-text';

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,14 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
-  SafeAreaView,
   Image,
   Switch,
+  BackHandler,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { postsApi } from '@/lib/api/posts';
 import { Colors } from '@/constants/theme';
@@ -23,10 +24,21 @@ import { ThemedText } from '@/components/themed-text';
 import { uploadImageToSupabase } from '@/lib/storage/upload';
 import { useAuth } from '@/lib/auth/AuthContext';
 
+function getMediaInfo(asset: ImagePicker.ImagePickerAsset) {
+  const fallbackType = asset.type === 'video' ? 'video/mp4' : 'image/jpeg';
+  const mimeType = asset.mimeType ?? fallbackType;
+  const extensionFromMime = mimeType.includes('/') ? mimeType.split('/')[1] : null;
+  const extensionFromUri = asset.uri.split('.').pop();
+  const extension = (extensionFromMime ?? extensionFromUri ?? 'bin').toLowerCase();
+
+  return { mimeType, extension };
+}
+
 export default function CreatePostScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
-  const tintColor = Colors[colorScheme ?? 'light'];
+  const isDark = colorScheme === 'dark';
+  const tintColor = isDark ? Colors.indigoLight : Colors.indigo;
   const { user } = useAuth();
 
   const [caption, setCaption] = useState('');
@@ -34,8 +46,36 @@ export default function CreatePostScreen() {
   const [visibility, setVisibility] = useState<'public' | 'followers' | 'family' | 'groups'>('public');
   const [isPaid, setIsPaid] = useState(false);
   const [priceCents, setPriceCents] = useState('0');
-  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [uploadedMediaUrls, setUploadedMediaUrls] = useState<string[]>([]);
+
+  const safeGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(tabs)');
+  };
+
+  useEffect(() => {
+    // Make Android's hardware back behave like the on-screen "close" button.
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      safeGoBack();
+      return true;
+    });
+    return () => sub.remove();
+  }, [router]);
+
+  useEffect(() => {
+    // If the user picks a new image, we need to re-upload.
+    setUploadedMediaUrls([]);
+    setUploadingMedia(false);
+  }, [selectedAsset?.uri]);
+
+  const optionRowBg = isDark ? 'rgba(255,255,255,0.07)' : '#f5f5f5';
+  const optionActiveBg = isDark ? 'rgba(129,140,248,0.18)' : '#e8f4f8';
 
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -45,32 +85,58 @@ export default function CreatePostScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ['images', 'videos'],
       quality: 0.9,
-      allowsEditing: true,
+      allowsEditing: false,
     });
 
     if (!result.canceled) {
-      setLocalImageUri(result.assets[0]?.uri ?? null);
+      setSelectedAsset(result.assets[0] ?? null);
+    }
+  };
+
+  const uploadSelectedImage = async () => {
+    if (!selectedAsset?.uri) return;
+    if (!user?.id) {
+      Alert.alert('Error', 'Please log in again.');
+      return;
+    }
+
+    setUploadingMedia(true);
+    try {
+      const { mimeType, extension } = getMediaInfo(selectedAsset);
+      const uploaded = await uploadImageToSupabase({
+        bucket: 'post-images',
+        path: `${user.id}/${Date.now()}.${extension}`,
+        localUri: selectedAsset.uri,
+        contentType: mimeType,
+      });
+      setUploadedMediaUrls([uploaded.publicUrl]);
+    } catch (error) {
+      Alert.alert('Error', String(error));
+    } finally {
+      setUploadingMedia(false);
     }
   };
 
   const handlePost = async () => {
-    if (!caption.trim() && !localImageUri) {
+    if (!caption.trim() && !selectedAsset?.uri) {
       Alert.alert('Error', 'Please add a caption or a photo');
       return;
     }
 
     setLoading(true);
     try {
-      let mediaUrls: string[] = [];
-      if (localImageUri) {
+      let mediaUrls: string[] = uploadedMediaUrls;
+      // Fallback: if user didn't tap "Done" yet, still upload on submit.
+      if (mediaUrls.length === 0 && selectedAsset?.uri) {
         if (!user?.id) throw new Error('Not authenticated');
+        const { mimeType, extension } = getMediaInfo(selectedAsset);
         const uploaded = await uploadImageToSupabase({
           bucket: 'post-images',
-          path: `${user.id}/${Date.now()}.jpg`,
-          localUri: localImageUri,
-          contentType: 'image/jpeg',
+          path: `${user.id}/${Date.now()}.${extension}`,
+          localUri: selectedAsset.uri,
+          contentType: mimeType,
         });
         mediaUrls = [uploaded.publicUrl];
       }
@@ -84,7 +150,7 @@ export default function CreatePostScreen() {
         media_urls: mediaUrls,
       });
       Alert.alert('Success', 'Post created!');
-      router.back();
+      safeGoBack();
     } catch (error) {
       Alert.alert('Error', String(error));
     } finally {
@@ -95,20 +161,52 @@ export default function CreatePostScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colorScheme === 'dark' ? '#1a1a1a' : '#fff' }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={safeGoBack}>
           <Ionicons name="close" size={24} color={tintColor} />
         </TouchableOpacity>
         <ThemedText type="subtitle">Create Post</ThemedText>
-        <TouchableOpacity onPress={handlePost} disabled={loading}>
-          {loading ? <ActivityIndicator /> : <ThemedText style={{ color: tintColor }}>Post</ThemedText>}
+        <TouchableOpacity onPress={handlePost} disabled={loading || uploadingMedia}>
+          {loading ? (
+            <ActivityIndicator />
+          ) : (
+            <ThemedText style={{ color: tintColor }}>Post</ThemedText>
+          )}
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {/* Image Picker */}
         <View style={styles.imageBox}>
-          {localImageUri ? (
-            <Image source={{ uri: localImageUri }} style={styles.image} resizeMode="cover" />
+          {selectedAsset?.uri ? (
+            <>
+              {selectedAsset.type === 'video' ? (
+                <View style={[styles.imageUpload, { backgroundColor: '#111' }]}>
+                  <Ionicons name="videocam" size={48} color={tintColor} />
+                  <ThemedText>Video selected</ThemedText>
+                </View>
+              ) : (
+                <Image source={{ uri: selectedAsset.uri }} style={styles.image} resizeMode="cover" />
+              )}
+              <View style={styles.imageActions}>
+                {uploadedMediaUrls.length === 0 ? (
+                  <TouchableOpacity
+                    onPress={uploadSelectedImage}
+                    disabled={uploadingMedia}
+                    style={[styles.pickButton, { borderColor: tintColor, backgroundColor: tintColor }]}>
+                    {uploadingMedia ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <ThemedText style={{ color: '#fff', fontWeight: '700' }}>Done</ThemedText>
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.uploadedPill}>
+                    <Ionicons name="checkmark-circle" size={16} color={tintColor} />
+                    <ThemedText style={{ color: tintColor, fontWeight: '700' }}>Ready</ThemedText>
+                  </View>
+                )}
+              </View>
+            </>
           ) : (
             <View style={styles.imageUpload}>
               <Ionicons name="image-outline" size={48} color={tintColor} />
@@ -120,9 +218,11 @@ export default function CreatePostScreen() {
           )}
         </View>
 
-        {localImageUri && (
+        {selectedAsset?.uri && (
           <TouchableOpacity onPress={pickImage} style={[styles.pickButton, { borderColor: tintColor, marginBottom: 16 }]}>
-            <ThemedText style={{ color: tintColor }}>Change photo</ThemedText>
+            <ThemedText style={{ color: tintColor }}>
+              Change {selectedAsset.type === 'video' ? 'video' : 'photo'}
+            </ThemedText>
           </TouchableOpacity>
         )}
 
@@ -152,7 +252,11 @@ export default function CreatePostScreen() {
           {(['public', 'followers', 'family', 'groups'] as const).map(vis => (
             <TouchableOpacity
               key={vis}
-              style={[styles.optionRow, visibility === vis && styles.optionActive]}
+              style={[
+                styles.optionRow,
+                { backgroundColor: optionRowBg },
+                visibility === vis && { backgroundColor: optionActiveBg },
+              ]}
               onPress={() => setVisibility(vis)}>
               <Ionicons name={visibility === vis ? 'radio-button-on' : 'radio-button-off'} size={20} color={tintColor} />
               <ThemedText style={{ textTransform: 'capitalize' }}>{vis}</ThemedText>
@@ -162,7 +266,7 @@ export default function CreatePostScreen() {
 
         {/* Paid Post */}
         <View style={styles.section}>
-          <View style={styles.optionRow}>
+          <View style={[styles.optionRow, { backgroundColor: optionRowBg }]}>
             <ThemedText>Gated/Paid Post</ThemedText>
             <Switch value={isPaid} onValueChange={setIsPaid} />
           </View>
@@ -240,12 +344,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
-    backgroundColor: '#f5f5f5',
     paddingHorizontal: 12,
     borderRadius: 8,
     marginBottom: 8,
   },
+  imageActions: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 12,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  uploadedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
   optionActive: {
+    // (kept for compatibility; actual color is set inline using `optionActiveBg`)
     backgroundColor: '#e8f4f8',
   },
 });

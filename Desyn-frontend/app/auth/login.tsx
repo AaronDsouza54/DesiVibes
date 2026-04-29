@@ -22,6 +22,8 @@ export default function LoginScreen() {
   const { signIn } = useAuth();
   const colorScheme = useColorScheme();
   const tintColor = Colors[colorScheme ?? 'light'];
+  const isDark = colorScheme === 'dark';
+  const inputTextColor = isDark ? '#fff' : '#000';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,7 +64,7 @@ export default function LoginScreen() {
           </ThemedText>
 
           <TextInput
-            style={[styles.input, { borderColor: tintColor }]}
+            style={[styles.input, { borderColor: tintColor, color: inputTextColor }]}
             placeholder="Email"
             placeholderTextColor={colorScheme === 'dark' ? '#999' : '#ccc'}
             value={email}
@@ -70,16 +72,18 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             editable={!loading}
+            selectionColor={tintColor}
           />
 
           <TextInput
-            style={[styles.input, { borderColor: tintColor }]}
+            style={[styles.input, { borderColor: tintColor, color: inputTextColor }]}
             placeholder="Password"
             placeholderTextColor={colorScheme === 'dark' ? '#999' : '#ccc'}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             editable={!loading}
+            selectionColor={tintColor}
           />
 
           <TouchableOpacity

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Desyn",
-    "slug": "Desyn",
+    "name": "DesiVibes",
+    "slug": "DesiVibes",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,6 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
+    },
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
     "android": {
       "adaptiveIcon": {

@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  SafeAreaView,
   TextInput,
 } from 'react-native';
-import { useRoute, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { postsApi, Post, Comment } from '@/lib/api/posts';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -19,7 +19,7 @@ import { ThemedText } from '@/components/themed-text';
 
 export default function PostScreen() {
   const router = useRouter();
-  const route = useRoute();
+  const params = useLocalSearchParams<{ id?: string }>();
   const colorScheme = useColorScheme();
   const tintColor = Colors[colorScheme ?? 'light'];
 
@@ -35,7 +35,7 @@ export default function PostScreen() {
 
   const loadPost = async () => {
     try {
-      const postID = (route.params as any)?.id;
+      const postID = params?.id;
       if (postID) {
         const postData = await postsApi.getPost(postID);
         setPost(postData);
