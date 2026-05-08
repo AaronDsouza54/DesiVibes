@@ -1,6 +1,6 @@
-# Desyn - South Asian Social Media Platform
+# DesiVibes - South Asian Social Media Platform
 
-A production-grade hackathon demo of a South Asian social media platform built with **Expo/React Native** (frontend) and **Go** (backend), featuring creator monetization, cultural communities, family connectivity, and privacy-first design.
+A production-grade hackathon demo of a South Asian social media platform built with **Expo/React Native** (frontend) and **Python** (backend), featuring creator monetization, cultural communities, family connectivity, and privacy-first design.
 
 ## Architecture
 
@@ -12,15 +12,10 @@ social-media-app/
 │   ├── lib/auth/          # Authentication context
 │   └── [components]
 │
-└── backend/               # Go REST API
-    ├── cmd/api/           # Entry point
-    ├── internal/
-    │   ├── handler/       # HTTP handlers
-    │   ├── service/       # Business logic
-    │   ├── repository/    # Data access
-    │   ├── domain/        # Domain models
-    │   └── config/        # Configuration
-    └── migrations/        # PostgreSQL schema
+└── backend/               # Python REST API
+    ├── app               # main app
+    ├── alembic/          # Migrations
+    ├── bin/              
 ```
 
 ---
@@ -33,9 +28,7 @@ social-media-app/
 - Expo CLI: `npm install -g eas-cli`
 
 ### Backend
-- Go 1.23+
-- PostgreSQL 12+
-- Docker & Docker Compose (recommended)
+- Python 3
 
 ---
 
@@ -49,7 +42,8 @@ cd social-media-app
 ### 2. Start Backend with Docker
 ```bash
 cd backend
-docker compose up -d --build
+source .venv/bin/activate
+
 # API runs on http://localhost:8080
 # Database runs on localhost:5432
 ```
@@ -58,7 +52,7 @@ docker compose up -d --build
 ```bash
 cd ../Desyn
 npm install
-npm run web
+expo start
 # App opens on http://localhost:19006 (or printed URL)
 ```
 
